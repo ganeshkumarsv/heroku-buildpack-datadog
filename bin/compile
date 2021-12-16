@@ -116,12 +116,16 @@ else
   fi
 fi
 
+BASE_URL="http://dd-agent-omnibus.s3.amazonaws.com/temp/datadog-heroku-agent_6.34.0~devel.git.186.1957dd5.pipeline.6370752-1_amd64.deb"
+AGENT_FILE="datadog-heroku-agent_6.34.0~devel.git.186.1957dd5.pipeline.6370752-1_amd64.deb"
 # Agent 7 onwards is Python3 only and repo file is different
 DD_AGENT_BASE_VERSION="7"
 if [ "$DD_AGENT_VERSION" != "$(echo -e "$DD_AGENT_BASE_VERSION\n$DD_AGENT_VERSION" | sort -V | head -n1)" ]; then
   DD_PYTHON_VERSION="3"
   # Modify repo file to point to agent 7
   cp "$APT_REPO_FILE_7" "$APT_REPO_FILE"
+  BASE_URL="http://dd-agent-omnibus.s3.amazonaws.com/temp/datadog-heroku-agent_7.34.0~devel.git.186.1957dd5.pipeline.6370752-1_amd64.deb"
+  AGENT_FILE="datadog-heroku-agent_7.34.0~devel.git.186.1957dd5.pipeline.6370752-1_amd64.deb"
 fi
 
 # Replace the placeholder in the source file by the actual path to the constructed keyring
@@ -154,8 +158,8 @@ fi
 # Set the  specified version.
 PACKAGE="datadog-agent=1:$DD_AGENT_VERSION"
 
-topic "Downloading Datadog Agent $DD_AGENT_VERSION"
-apt-get $APT_OPTIONS -y --force-yes -d install --reinstall --no-install-recommends "$PACKAGE" | indent
+topic "Downloading Datadog Agent $AGENT_FILE"
+#apt-get $APT_OPTIONS -y --force-yes -d install --reinstall --no-install-recommends "$PACKAGE" | indent
 
 DPKG_STUB="$APT_CACHE_DIR/archives/datadog-agent_1%3a"
 if [ -z $DD_AGENT_VERSION ]; then
@@ -166,16 +170,28 @@ else
   DEB="$DPKG_STUB""$DD_AGENT_VERSION"_amd64.deb
 fi
 
+cd /tmp && { curl -O  "$BASE_URL" ; cd -; }
+DEB="/tmp/${AGENT_FILE}"
+
 topic "Installing Datadog Agent"
 dpkg -x "$DEB" "$APT_DIR"
 
 # Removing unneeded content
 rm -rf "$APT_DIR"/opt/datadog-agent/sources \
        "$APT_DIR"/opt/datadog-agent/embedded/share/doc \
-       "$APT_DIR"/opt/datadog-agent/embedded/share/man
+       "$APT_DIR"/opt/datadog-agent/embedded/share/man \
+       "$APT_DIR"/opt/datadog-agent/embedded/.installed_by_pkg.txt
+
 
 # Remove Cryptodome Selftest
 rm -rf "$APT_DIR"/opt/datadog-agent/embedded/lib/python*/site-packages/Cryptodome/SelfTest
+
+# Remove unused botocore data
+for i in `ls $APT_DIR/opt/datadog-agent/embedded/lib/python*/site-packages/botocore/data`; do
+  if [ "$i" != "s3" ]; then
+    rm -rf "$APT_DIR"/opt/datadog-agent/embedded/lib/python*/site-packages/botocore/data/"$i"
+  fi
+done
 
 # Remove unnedded Python packages
 for i in "${DELETE_PACKAGES[@]}"; do
@@ -185,9 +201,11 @@ done
 # Remove the system-probe binary, only needed for network performance monitoring
 rm -rf "$APT_DIR/opt/datadog-agent/embedded/bin/system-probe"
 rm -rf "$APT_DIR"/opt/datadog-agent/embedded/lib/libbcc*
+rm -rf "$APT_DIR"/opt/datadog-agent/embedded/nikos/
 
 # Remove static libraries
 rm -rf "$APT_DIR"/opt/datadog-agent/embedded/lib/*.a
+rm -rf "$APT_DIR"/opt/datadog-agent/embedded/lib/python*/config*/*.a
 
 # Remove the Security agent
 rm -rf "$APT_DIR/opt/datadog-agent/embedded/bin/security-agent"
