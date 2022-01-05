@@ -8,17 +8,33 @@ on:
     branches: [ master ]
 
 jobs:
-  shellcheck:
-    name: runner / shellcheck
+  upload-sarif:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
-      - uses: actions/checkout@v1
-      - name: shellcheck
-        uses: reviewdog/action-shellcheck@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-pr-review # Change reporter.
-          path: "." # Optional.
-          pattern: "*.sh" # Optional.
-          exclude: "./.git/*" # Optional.
-          check_all_files_with_shebangs: "false" # Optional.
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - run: sudo apt-get install shellcheck
+      - run:
+          shellcheck -f json extra/datadog.sh > result.json
+          
+      - name: create sarif file
+        uses: lvyinggithub/json-to-sarif-actions@main
+        with:
+          json_file_path: "result.json"
+          licens_sarif_path: "result.sarif"
+      - name: cat sarif
+        run: cat result.sarif
+      - name: upload  scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: result.sarif          
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: results.sarif
