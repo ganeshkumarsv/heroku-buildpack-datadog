@@ -21,7 +21,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - run: sudo apt-get install shellcheck
       - run:
-          shellcheck -f json extra/datadog.sh
+          shellcheck -f json -v extra/datadog.sh
           
       - name: create sarif file
         uses: lvyinggithub/json-to-sarif-actions@main
