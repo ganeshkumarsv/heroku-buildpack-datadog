@@ -19,7 +19,7 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - run: cargo install shellcheck-sarif
+      - run: apt install shellcheck-sarif
       - run:
           shellcheck -f json extra/datadog.sh | shellcheck-sarif | tee
           results.sarif | sarif-fmt
