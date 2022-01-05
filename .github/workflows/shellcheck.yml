@@ -20,8 +20,7 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
       - run: sudo apt-get install shellcheck
-      - run:
-          shellcheck -f json extra/datadog.sh
+      - run: shellcheck -f json extra/datadog.sh
       - uses: lvyinggithub/json-to-sarif-actions@main
         with:
           json_file_path: "result.json"
