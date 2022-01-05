@@ -19,9 +19,9 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - run: cargo install shellcheck-sarif sarif-fmt
+      - run: cargo install shellcheck-sarif
       - run:
-          shellcheck -f json shellscript.sh | shellcheck-sarif | tee
+          shellcheck -f json extra/datadog.sh | shellcheck-sarif | tee
           results.sarif | sarif-fmt
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v1
