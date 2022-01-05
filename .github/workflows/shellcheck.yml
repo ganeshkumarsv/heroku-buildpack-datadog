@@ -26,11 +26,11 @@ jobs:
           json_file_path: "result.json"
           licens_sarif_path: "result.sarif"
       - name: cat sarif
-        run: cat result.sarif
+        run: cat result.json
       - name: upload  scan SARIF report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: result.json          
+          sarif_file: result.sarif          
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v1
         with:
