@@ -20,7 +20,7 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
       - run: sudo apt-get install shellcheck
-      - run: shellcheck -f json bin/common.sh > license-go.json || pwd
+      - run: shellcheck -f json test/compile_and_run_test.sh > license-go.json || pwd
       - name: create sarif file
         uses: lvyinggithub/json-to-sarif-actions@main
         with:
